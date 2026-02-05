@@ -4,7 +4,7 @@ from azure.ai.inference.models import SystemMessage, UserMessage
 from azure.core.credentials import AzureKeyCredential
 
 endpoint = "https://models.github.ai/inference"
-model = "deepseek/DeepSeek-V3-0324"
+model = "gpt-4o"
 token = os.environ["GITHUB_TOKEN"]
 
 client = ChatCompletionsClient(
@@ -12,16 +12,42 @@ client = ChatCompletionsClient(
     credential=AzureKeyCredential(token),
 )
 
-response = client.complete(
-    messages=[
-        SystemMessage("You are a helpful assistant."),
-        UserMessage("What is the capital of France?"),
-    ],
-    temperature=1.0,
-    top_p=1.0,
-    max_tokens=1000,
-    model=model
-)
+# Initialize conversation history
+messages = [
+    SystemMessage("You are a helpful assistant."),
+]
 
-print(response.choices[0].message.content)
+print("Assistant: Hello! How can I assist you today?")
+print("(Type 'exit' to quit)\n")
+
+while True:
+    user_input = input("You: ").strip()
+    
+    if user_input.lower() == 'exit':
+        print("Goodbye!")
+        break
+    
+    if not user_input:
+        continue
+    
+    # Add user message to history
+    messages.append(UserMessage(user_input))
+    
+    try:
+        response = client.complete(
+            messages=messages,
+            temperature=1.0,
+            top_p=1.0,
+            max_tokens=1000,
+            model=model
+        )
+        
+        assistant_message = response.choices[0].message.content
+        print(f"\nAssistant: {assistant_message}\n")
+        
+        # Add assistant response to history
+        messages.append(SystemMessage(assistant_message))
+        
+    except Exception as e:
+        print(f"\nError: {str(e)}\n")
 
